@@ -1,0 +1,72 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'thor'
+require 'colorize'
+require_relative '../lib/lantae_bridge'
+
+class LantaeFixCLI < Thor
+  desc 'file PATH', 'Fix formatting issues in a single file'
+  option :backup, type: :boolean, default: true, desc: 'Create backup before fixing'
+  def file(path)
+    if options[:backup]
+      backup_path = "#{path}.bak"
+      FileUtils.cp(path, backup_path)
+      puts "Created backup: #{backup_path}".light_black
+    end
+    
+    converter = LantaeBridge::Converter.new
+    result = converter.convert_file(path)
+    
+    if result[:success]
+      puts "✓ Fixed: #{path}".green
+    else
+      puts "✗ Failed: #{path}".red
+      puts "  Error: #{result[:error]}".red
+      exit 1
+    end
+  rescue StandardError => e
+    puts "Error: #{e.message}".red
+    exit 1
+  end
+
+  desc 'directory PATH', 'Fix all markdown files in a directory'
+  option :backup, type: :boolean, default: true, desc: 'Create backups before fixing'
+  def directory(path)
+    converter = LantaeBridge::Converter.new
+    
+    if options[:backup]
+      backup_dir = "#{path}_backup_#{Time.now.strftime('%Y%m%d_%H%M%S')}"
+      FileUtils.cp_r(path, backup_dir)
+      puts "Created backup: #{backup_dir}".light_black
+    end
+    
+    results = converter.convert_directory(path)
+    
+    successful = results.select { |r| r[:success] }
+    failed = results.reject { |r| r[:success] }
+    
+    puts "\nFixing complete:".cyan
+    puts "  ✓ Fixed: #{successful.size}".green
+    puts "  ✗ Failed: #{failed.size}".red if failed.any?
+    
+    if failed.any?
+      puts "\nFailed files:".red
+      failed.each do |result|
+        puts "  - #{result[:file]}".red
+        puts "    #{result[:error]}".light_red
+      end
+      exit 1
+    end
+  rescue StandardError => e
+    puts "Error: #{e.message}".red
+    exit 1
+  end
+
+  desc 'version', 'Show version'
+  def version
+    puts "Lantae Bridge v#{LantaeBridge::VERSION}"
+  end
+end
+
+LantaeFixCLI.start(ARGV)

@@ -1,0 +1,73 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'thor'
+require 'colorize'
+require_relative '../lib/lantae_bridge'
+
+class LantaeConvertCLI < Thor
+  desc 'file PATH', 'Convert a single file to Logseq format'
+  option :output, aliases: '-o', desc: 'Output file path'
+  option :dry_run, type: :boolean, desc: 'Show conversion without saving'
+  def file(path)
+    converter = LantaeBridge::Converter.new
+    
+    if options[:dry_run]
+      result = converter.dry_run(path)
+      puts result
+    else
+      result = converter.convert_file(path, options[:output])
+      
+      if result[:success]
+        puts "✓ Converted: #{path}".green
+        puts "  Output: #{result[:output_path]}".light_black
+      else
+        puts "✗ Failed: #{path}".red
+        puts "  Error: #{result[:error]}".red
+      end
+    end
+  rescue StandardError => e
+    puts "Error: #{e.message}".red
+    exit 1
+  end
+
+  desc 'directory PATH', 'Convert all markdown files in a directory'
+  option :output, aliases: '-o', desc: 'Output directory path'
+  option :dry_run, type: :boolean, desc: 'Show what would be converted'
+  def directory(path)
+    converter = LantaeBridge::Converter.new
+    
+    if options[:dry_run]
+      files = Dir.glob(File.join(path, '**', '*.md'))
+      puts "Would convert #{files.size} files:".yellow
+      files.each { |f| puts "  - #{f}" }
+    else
+      results = converter.convert_directory(path, options[:output])
+      
+      successful = results.select { |r| r[:success] }
+      failed = results.reject { |r| r[:success] }
+      
+      puts "\nConversion complete:".cyan
+      puts "  ✓ Successful: #{successful.size}".green
+      puts "  ✗ Failed: #{failed.size}".red if failed.any?
+      
+      if failed.any?
+        puts "\nFailed files:".red
+        failed.each do |result|
+          puts "  - #{result[:file]}".red
+          puts "    #{result[:error]}".light_red
+        end
+      end
+    end
+  rescue StandardError => e
+    puts "Error: #{e.message}".red
+    exit 1
+  end
+
+  desc 'version', 'Show version'
+  def version
+    puts "Lantae Bridge v#{LantaeBridge::VERSION}"
+  end
+end
+
+LantaeConvertCLI.start(ARGV)

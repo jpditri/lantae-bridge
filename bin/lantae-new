@@ -1,0 +1,139 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'thor'
+require 'colorize'
+require 'yaml'
+require_relative '../lib/lantae_bridge'
+
+class LantaeNewCLI < Thor
+  desc 'npc NAME', 'Create a new NPC from template'
+  option :campaign, required: true, desc: 'Campaign name'
+  option :title, desc: 'NPC title/role'
+  option :data, desc: 'YAML file with NPC data'
+  def npc(name)
+    data = load_data(options[:data])
+    data[:name] = name
+    data[:campaign] = options[:campaign]
+    data[:title] = options[:title] if options[:title]
+    
+    create_from_template('npc', name, data)
+  end
+
+  desc 'location NAME', 'Create a new location from template'
+  option :campaign, required: true, desc: 'Campaign name'
+  option :data, desc: 'YAML file with location data'
+  def location(name)
+    data = load_data(options[:data])
+    data[:name] = name
+    data[:campaign] = options[:campaign]
+    
+    create_from_template('location', name, data)
+  end
+
+  desc 'faction NAME', 'Create a new faction from template'
+  option :campaign, required: true, desc: 'Campaign name'
+  option :tagline, desc: 'Faction tagline'
+  option :data, desc: 'YAML file with faction data'
+  def faction(name)
+    data = load_data(options[:data])
+    data[:name] = name
+    data[:campaign] = options[:campaign]
+    data[:tagline] = options[:tagline] if options[:tagline]
+    
+    create_from_template('faction', name, data)
+  end
+
+  desc 'item NAME', 'Create a new item from template'
+  option :campaign, required: true, desc: 'Campaign name'
+  option :type, desc: 'Item type (weapon, armor, etc.)'
+  option :data, desc: 'YAML file with item data'
+  def item(name)
+    data = load_data(options[:data])
+    data[:name] = name
+    data[:campaign] = options[:campaign]
+    data[:item_type] = options[:type] if options[:type]
+    
+    create_from_template('item', name, data)
+  end
+
+  desc 'lore TITLE', 'Create a new lore entry from template'
+  option :campaign, required: true, desc: 'Campaign name'
+  option :category, desc: 'Lore category'
+  option :data, desc: 'YAML file with lore data'
+  def lore(title)
+    data = load_data(options[:data])
+    data[:title] = title
+    data[:campaign] = options[:campaign]
+    data[:category] = options[:category] if options[:category]
+    
+    create_from_template('lore', title, data)
+  end
+
+  desc 'pc NAME', 'Create a new player character from template'
+  option :campaign, required: true, desc: 'Campaign name'
+  option :player, desc: 'Player name'
+  option :race, required: true, desc: 'Character race'
+  option :class, required: true, desc: 'Character class'
+  option :level, type: :numeric, default: 1, desc: 'Character level'
+  option :data, desc: 'YAML file with character data'
+  def pc(name)
+    data = load_data(options[:data])
+    data[:character_name] = name
+    data[:campaign] = options[:campaign]
+    data[:player_name] = options[:player]
+    data[:race] = options[:race]
+    data[:character_class] = options[:class]
+    data[:level] = options[:level]
+    
+    create_from_template('player_character', name, data)
+  end
+
+  desc 'list', 'List available templates'
+  def list
+    engine = LantaeBridge::TemplateEngine.new
+    templates = engine.available_templates
+    
+    puts "Available templates:".cyan
+    templates.each do |template|
+      puts "  - #{template}".green
+    end
+  end
+
+  desc 'version', 'Show version'
+  def version
+    puts "Lantae Bridge v#{LantaeBridge::VERSION}"
+  end
+
+  private
+
+  def load_data(file_path)
+    return {} unless file_path
+    
+    YAML.load_file(file_path) || {}
+  rescue StandardError => e
+    puts "Warning: Failed to load data file: #{e.message}".yellow
+    {}
+  end
+
+  def create_from_template(template, name, data)
+    engine = LantaeBridge::TemplateEngine.new
+    filename = name.downcase.gsub(/\s+/, '-').gsub(/[^a-z0-9-]/, '')
+    output_path = "#{filename}.md"
+    
+    result = engine.create_from_template(template, output_path, data)
+    
+    if result[:success]
+      puts "✓ Created #{template}: #{output_path}".green
+    else
+      puts "✗ Failed to create #{template}".red
+      puts "  Error: #{result[:error]}".red
+      exit 1
+    end
+  rescue StandardError => e
+    puts "Error: #{e.message}".red
+    exit 1
+  end
+end
+
+LantaeNewCLI.start(ARGV)

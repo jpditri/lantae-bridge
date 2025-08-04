@@ -1,0 +1,67 @@
+<%= property('title', title) %>
+<%= property('type', 'lore') %>
+<%= property('campaign', campaign) %>
+<%= property('category', category) if category %>
+<%= property('tags', tags.map { |t| tag(t) }.join(' ')) if tags %>
+
+- # <%= title %>
+<% if subtitle -%>
+*<%= subtitle %>*
+<% end -%>
+
+- ## Overview
+	- <%= overview || "Brief summary of this lore entry" %>
+
+<% if sections && sections.any? -%>
+<% sections.each do |section| -%>
+- ## <%= section[:title] %>
+	<% if section[:content].is_a?(Array) -%>
+	<% section[:content].each do |item| -%>
+	- <%= item %>
+	<% end -%>
+	<% else -%>
+	- <%= section[:content] %>
+	<% end -%>
+	<% if section[:subsections] -%>
+	<% section[:subsections].each do |subsection| -%>
+	- ### <%= subsection[:title] %>
+		<% if subsection[:content].is_a?(Array) -%>
+		<% subsection[:content].each do |item| -%>
+		- <%= item %>
+		<% end -%>
+		<% else -%>
+		- <%= subsection[:content] %>
+		<% end -%>
+	<% end -%>
+	<% end -%>
+
+<% end -%>
+<% end -%>
+
+<% if implications && implications.any? -%>
+- ## Implications
+<% implications.each do |implication| -%>
+	- <%= implication %>
+<% end -%>
+<% end -%>
+
+<% if connections && connections.any? -%>
+- ## Related Topics
+<% connections.each do |connection| -%>
+	- <%= link(connection[:topic]) %>: <%= connection[:relationship] %>
+<% end -%>
+<% end -%>
+
+<% if quotes && quotes.any? -%>
+- ## Quotes & References
+<% quotes.each do |quote| -%>
+	> "<%= quote[:text] %>"
+	> — <%= quote[:source] %>
+	
+<% end -%>
+<% end -%>
+
+<% if dm_notes -%>
+- ## DM Notes
+	- <%= dm_notes %>
+<% end -%>

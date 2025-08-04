@@ -1,0 +1,88 @@
+<%= property('title', name) %>
+<%= property('type', 'item') %>
+<%= property('campaign', campaign) %>
+<%= property('item_type', item_type) if item_type %>
+<%= property('rarity', rarity) if rarity %>
+<%= property('attunement', attunement ? 'required' : 'not required') if defined?(attunement) %>
+<%= property('tags', tags.map { |t| tag(t) }.join(' ')) if tags %>
+
+- # <%= name %>
+<% if subtitle -%>
+- ## <%= subtitle %>
+<% end -%>
+
+- ### Description
+	- <%= description || "Physical description of the item" %>
+	<% if appearance_details && appearance_details.any? -%>
+	- **Details**:
+	<% appearance_details.each do |detail| -%>
+		- <%= detail %>
+	<% end -%>
+	<% end -%>
+
+<% if properties && properties.any? -%>
+- ### Properties
+<% properties.each do |prop| -%>
+	- **<%= prop[:name] %>**: <%= prop[:effect] %>
+<% end -%>
+<% end -%>
+
+<% if abilities && abilities.any? -%>
+- ### Abilities
+<% abilities.each do |ability| -%>
+	- **<%= ability[:name] %>**: <%= ability[:description] %>
+	<% if ability[:charges] -%>
+		- **Charges**: <%= ability[:charges] %>
+	<% end -%>
+	<% if ability[:recharge] -%>
+		- **Recharge**: <%= ability[:recharge] %>
+	<% end -%>
+<% end -%>
+<% end -%>
+
+<% if curse -%>
+- ### Curse
+	- <%= curse[:description] %>
+	<% if curse[:trigger] -%>
+	- **Trigger**: <%= curse[:trigger] %>
+	<% end -%>
+	<% if curse[:removal] -%>
+	- **Removal**: <%= curse[:removal] %>
+	<% end -%>
+<% end -%>
+
+<% if lore -%>
+- ### Lore
+	- <%= lore[:history] || "Historical background" %>
+	<% if lore[:creator] -%>
+	- **Created by**: <%= link(lore[:creator]) %>
+	<% end -%>
+	<% if lore[:previous_owners] && lore[:previous_owners].any? -%>
+	- **Previous Owners**:
+	<% lore[:previous_owners].each do |owner| -%>
+		- <%= link(owner) %>
+	<% end -%>
+	<% end -%>
+<% end -%>
+
+<% if stats -%>
+- ### Game Statistics
+	- **Type**: <%= stats[:type] || item_type %>
+	<% if stats[:damage] -%>
+	- **Damage**: <%= stats[:damage] %>
+	<% end -%>
+	<% if stats[:ac_bonus] -%>
+	- **AC Bonus**: <%= stats[:ac_bonus] %>
+	<% end -%>
+	<% if stats[:weight] -%>
+	- **Weight**: <%= stats[:weight] %>
+	<% end -%>
+	<% if stats[:value] -%>
+	- **Value**: <%= stats[:value] %>
+	<% end -%>
+<% end -%>
+
+<% if plot_significance -%>
+- ### Plot Significance
+	- <%= plot_significance %>
+<% end -%>

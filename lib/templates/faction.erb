@@ -1,0 +1,101 @@
+<%= property('title', "#{name} - #{tagline || 'Faction'}") %>
+<%= property('type', 'faction') %>
+<%= property('campaign', campaign) %>
+<%= property('allegiance', allegiance) if allegiance %>
+<%= property('headquarters', headquarters) if headquarters %>
+<%= property('tags', tags.map { |t| tag(t) }.join(' ')) if tags %>
+
+- # <%= name %>
+<% if tagline -%>
+- ## <%= tagline %>
+<% end -%>
+
+- ### Overview
+	- **Type**: <%= faction_type || "Organization" %>
+	- **Allegiance**: <%= link(allegiance) || "Independent" %>
+	- **Influence**: <%= influence_level || "Regional" %>
+	- **Status**: <%= status || "Active" %>
+
+- ### Summary
+	- <%= summary || "Brief description of the faction's purpose and activities" %>
+
+<% if beliefs && beliefs.any? -%>
+- ### Beliefs & Goals
+<% beliefs.each do |belief| -%>
+	- <%= belief %>
+<% end -%>
+<% end -%>
+
+- ### Structure
+	- **Leadership**: <%= leadership_type || "Hierarchical" %>
+	- **Membership Size**: <%= membership_size || "Unknown" %>
+	<% if ranks && ranks.any? -%>
+	- **Ranks**:
+	<% ranks.each do |rank| -%>
+		- **<%= rank[:title] %>**: <%= rank[:description] %>
+	<% end -%>
+	<% end -%>
+
+<% if headquarters || bases -%>
+- ### Locations
+	<% if headquarters -%>
+	- **Headquarters**: <%= link(headquarters) %>
+	<% end -%>
+	<% if bases && bases.any? -%>
+	- **Other Bases**:
+	<% bases.each do |base| -%>
+		- <%= link(base) %>
+	<% end -%>
+	<% end -%>
+<% end -%>
+
+<% if members && members.any? -%>
+- ### Notable Members
+<% members.each do |member| -%>
+	- <%= link(member[:name]) %>: <%= member[:role] %>
+<% end -%>
+<% end -%>
+
+<% if resources && resources.any? -%>
+- ### Resources
+<% resources.each do |resource| -%>
+	- **<%= resource[:type] %>**: <%= resource[:description] %>
+<% end -%>
+<% end -%>
+
+<% if operations && operations.any? -%>
+- ### Current Operations
+<% operations.each do |operation| -%>
+	- **<%= operation[:name] %>**: <%= operation[:description] %>
+<% end -%>
+<% end -%>
+
+<% if relationships && relationships.any? -%>
+- ### Relationships
+	- **Allies**:
+	<% relationships.select { |r| r[:type] == 'ally' }.each do |rel| -%>
+		- <%= link(rel[:faction]) %>: <%= rel[:description] %>
+	<% end -%>
+	- **Enemies**:
+	<% relationships.select { |r| r[:type] == 'enemy' }.each do |rel| -%>
+		- <%= link(rel[:faction]) %>: <%= rel[:description] %>
+	<% end -%>
+	- **Neutral**:
+	<% relationships.select { |r| r[:type] == 'neutral' }.each do |rel| -%>
+		- <%= link(rel[:faction]) %>: <%= rel[:description] %>
+	<% end -%>
+<% end -%>
+
+<% if secrets && secrets.any? -%>
+- ### Secrets
+<% secrets.each do |secret| -%>
+	- <%= secret %>
+<% end -%>
+<% end -%>
+
+<% if symbols -%>
+- ### Symbols & Identification
+	- **Symbol**: <%= symbols[:main] || "Faction symbol" %>
+	- **Colors**: <%= symbols[:colors] || "Faction colors" %>
+	- **Motto**: "<%= symbols[:motto] || "Faction motto" %>"
+<% end -%>

@@ -1,0 +1,92 @@
+<%= property('title', "#{character_name} - #{race} #{character_class}") %>
+<%= property('type', 'player-character') %>
+<%= property('campaign', campaign) %>
+<%= property('player', player_name) if player_name %>
+<%= property('race', race) %>
+<%= property('class', character_class) %>
+<%= property('level', level) %>
+<%= property('alignment', alignment) if alignment %>
+<%= property('tags', tags.map { |t| tag(t) }.join(' ')) if tags %>
+
+- # <%= character_name %>
+- ## Level <%= level %> <%= race %> <%= character_class %>
+
+- ### Basic Information
+	- **Player**: <%= player_name || "Unknown" %>
+	- **Background**: <%= background || "Unknown" %>
+	- **Alignment**: <%= alignment || "Unknown" %>
+	- **Experience**: <%= experience || 0 %> XP
+
+- ### Physical Description
+	- **Age**: <%= age || "Unknown" %>
+	- **Height**: <%= height || "Unknown" %>
+	- **Weight**: <%= weight || "Unknown" %>
+	- **Eyes**: <%= eyes || "Unknown" %>
+	- **Hair**: <%= hair || "Unknown" %>
+	- **Distinguishing Features**: <%= distinguishing_features || "None noted" %>
+
+- ### Personality
+	- **Traits**: <%= personality_traits || "To be determined" %>
+	- **Ideals**: <%= ideals || "To be determined" %>
+	- **Bonds**: <%= bonds || "To be determined" %>
+	- **Flaws**: <%= flaws || "To be determined" %>
+
+- ### Backstory
+	- <%= backstory || "Character backstory to be added" %>
+
+- ### Stats
+	- **STR**: <%= stats[:str] || 10 %> (<%= modifier(stats[:str] || 10) %>)
+	- **DEX**: <%= stats[:dex] || 10 %> (<%= modifier(stats[:dex] || 10) %>)
+	- **CON**: <%= stats[:con] || 10 %> (<%= modifier(stats[:con] || 10) %>)
+	- **INT**: <%= stats[:int] || 10 %> (<%= modifier(stats[:int] || 10) %>)
+	- **WIS**: <%= stats[:wis] || 10 %> (<%= modifier(stats[:wis] || 10) %>)
+	- **CHA**: <%= stats[:cha] || 10 %> (<%= modifier(stats[:cha] || 10) %>)
+
+- ### Combat
+	- **AC**: <%= ac || 10 %>
+	- **HP**: <%= current_hp || max_hp %> / <%= max_hp %>
+	- **Hit Dice**: <%= hit_dice || "1d8" %>
+	- **Speed**: <%= speed || "30 ft" %>
+	- **Initiative**: <%= initiative || "+0" %>
+	- **Proficiency Bonus**: +<%= proficiency_bonus || 2 %>
+
+<% if skills && skills.any? -%>
+- ### Skills
+<% skills.each do |skill| -%>
+	- **<%= skill[:name] %>**: <%= skill[:bonus] %> <%= skill[:proficient] ? "(P)" : "" %>
+<% end -%>
+<% end -%>
+
+<% if equipment && equipment.any? -%>
+- ### Equipment
+<% equipment.group_by { |e| e[:category] || 'Other' }.each do |category, items| -%>
+	- **<%= category %>**:
+	<% items.each do |item| -%>
+		- <%= item[:name] %><%= item[:quantity] && item[:quantity] > 1 ? " (×#{item[:quantity]})" : "" %>
+	<% end -%>
+<% end -%>
+<% end -%>
+
+<% if spells -%>
+- ### Spellcasting
+	- **Spellcasting Ability**: <%= spells[:ability] || "Intelligence" %>
+	- **Spell Save DC**: <%= spells[:save_dc] || 8 %>
+	- **Spell Attack Bonus**: <%= spells[:attack_bonus] || "+0" %>
+	<% if spells[:known] && spells[:known].any? -%>
+	- **Known Spells**:
+	<% spells[:known].group_by { |s| s[:level] }.each do |level, spell_list| -%>
+		- **Level <%= level %>**: <%= spell_list.map { |s| s[:name] }.join(", ") %>
+	<% end -%>
+	<% end -%>
+<% end -%>
+
+<% if notes && notes.any? -%>
+- ### Campaign Notes
+<% notes.each do |note| -%>
+	- <%= note %>
+<% end -%>
+<% end -%>
+
+<% def modifier(score)
+  ((score - 10) / 2).floor >= 0 ? "+#{((score - 10) / 2).floor}" : "#{((score - 10) / 2).floor}"
+end -%>

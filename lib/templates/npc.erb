@@ -1,0 +1,87 @@
+<%= property('title', "#{name} - #{title || 'NPC'}") %>
+<%= property('type', 'npc') %>
+<%= property('campaign', campaign) %>
+<%= property('alignment', alignment) if alignment %>
+<%= property('location', location) if location %>
+<%= property('race', race) if race %>
+<%= property('class', character_class) if character_class %>
+<%= property('level', level) if level %>
+<%= property('tags', tags.map { |t| tag(t) }.join(' ')) if tags %>
+
+- # <%= name %>
+<% if title -%>
+- ## <%= title %>
+<% end -%>
+
+- ### Physical Description
+	- <%= physical_description || "Description needed" %>
+	<% if notable_features -%>
+	- **Notable Features**: <%= notable_features %>
+	<% end -%>
+
+- ### Personality Traits
+<% if personality_traits && personality_traits.any? -%>
+<% personality_traits.each do |trait| -%>
+	- **<%= trait[:name] %>**: <%= trait[:description] %>
+<% end -%>
+<% else -%>
+	- Personality traits to be added
+<% end -%>
+
+- ### Background
+	- <%= background || "Background story needed" %>
+
+<% if abilities && abilities.any? -%>
+- ### Abilities
+<% abilities.each do |ability| -%>
+	- **<%= ability[:name] %>**: <%= ability[:description] %>
+<% end -%>
+<% end -%>
+
+- ### Current Situation
+	- <%= current_situation || "Current activities and goals" %>
+
+<% if relationships && relationships.any? -%>
+- ### Relationships
+<% relationships.each do |rel| -%>
+	- <%= link(rel[:name]) %>: <%= rel[:description] %>
+<% end -%>
+<% end -%>
+
+<% if secrets && secrets.any? -%>
+- ### Secrets
+<% secrets.each do |secret| -%>
+	- <%= secret %>
+<% end -%>
+<% end -%>
+
+- ### Roleplaying Notes
+	- **Voice**: <%= voice || "Distinctive speaking style" %>
+	- **Mannerisms**: <%= mannerisms || "Characteristic behaviors" %>
+	<% if catchphrases && catchphrases.any? -%>
+	- **Common Phrases**:
+	<% catchphrases.each do |phrase| -%>
+		- "<%= phrase %>"
+	<% end -%>
+	<% end -%>
+
+<% if stats -%>
+- ### Stats & Abilities
+	- **AC**: <%= stats[:ac] || 10 %>
+	- **HP**: <%= stats[:hp] || "1d8" %>
+	- **Speed**: <%= stats[:speed] || "30 ft" %>
+	- **STR**: <%= stats[:str] || 10 %> **DEX**: <%= stats[:dex] || 10 %> **CON**: <%= stats[:con] || 10 %>
+	- **INT**: <%= stats[:int] || 10 %> **WIS**: <%= stats[:wis] || 10 %> **CHA**: <%= stats[:cha] || 10 %>
+	<% if stats[:skills] -%>
+	- **Skills**: <%= stats[:skills] %>
+	<% end -%>
+	<% if stats[:languages] -%>
+	- **Languages**: <%= stats[:languages] %>
+	<% end -%>
+<% end -%>
+
+---
+
+<% if quote -%>
+*"<%= quote %>"*
+<% end -%>

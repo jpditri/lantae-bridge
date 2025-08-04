@@ -1,0 +1,79 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'thor'
+require 'colorize'
+require_relative '../lib/lantae_bridge'
+
+class LantaeValidateCLI < Thor
+  desc 'file PATH', 'Validate a single file for Logseq compatibility'
+  def file(path)
+    validator = LantaeBridge::Validator.new
+    result = validator.validate_file(path)
+    
+    display_validation_result(result)
+    
+    exit 1 unless result[:valid]
+  rescue StandardError => e
+    puts "Error: #{e.message}".red
+    exit 1
+  end
+
+  desc 'directory PATH', 'Validate all markdown files in a directory'
+  option :summary, type: :boolean, desc: 'Show summary only'
+  def directory(path)
+    validator = LantaeBridge::Validator.new
+    results = validator.validate_directory(path)
+    
+    if options[:summary]
+      display_summary(results)
+    else
+      results.each { |result| display_validation_result(result) }
+      puts "\n"
+      display_summary(results)
+    end
+    
+    exit 1 if results.any? { |r| !r[:valid] }
+  rescue StandardError => e
+    puts "Error: #{e.message}".red
+    exit 1
+  end
+
+  desc 'version', 'Show version'
+  def version
+    puts "Lantae Bridge v#{LantaeBridge::VERSION}"
+  end
+
+  private
+
+  def display_validation_result(result)
+    status = result[:valid] ? '✓'.green : '✗'.red
+    puts "#{status} #{result[:file]}"
+    
+    if result[:errors].any?
+      puts "  Errors:".red
+      result[:errors].each { |error| puts "    - #{error}".red }
+    end
+    
+    if result[:warnings].any?
+      puts "  Warnings:".yellow
+      result[:warnings].each { |warning| puts "    - #{warning}".yellow }
+    end
+  end
+
+  def display_summary(results)
+    valid_count = results.count { |r| r[:valid] }
+    invalid_count = results.size - valid_count
+    total_errors = results.sum { |r| r[:errors].size }
+    total_warnings = results.sum { |r| r[:warnings].size }
+    
+    puts "Validation Summary:".cyan
+    puts "  Total files: #{results.size}"
+    puts "  ✓ Valid: #{valid_count}".green
+    puts "  ✗ Invalid: #{invalid_count}".red if invalid_count > 0
+    puts "  Total errors: #{total_errors}".red if total_errors > 0
+    puts "  Total warnings: #{total_warnings}".yellow if total_warnings > 0
+  end
+end
+
+LantaeValidateCLI.start(ARGV)

@@ -1,0 +1,91 @@
+<%= property('title', name) %>
+<%= property('type', 'location') %>
+<%= property('campaign', campaign) %>
+<%= property('region', region) if region %>
+<%= property('settlement_type', settlement_type) if settlement_type %>
+<%= property('tags', tags.map { |t| tag(t) }.join(' ')) if tags %>
+
+- # <%= name %>
+
+- ### Overview
+	- <%= overview || "General description of the location" %>
+
+- ### Geography
+	- **Climate**: <%= climate || "Temperate" %>
+	- **Terrain**: <%= terrain || "Varied" %>
+	<% if landmarks && landmarks.any? -%>
+	- **Notable Landmarks**:
+	<% landmarks.each do |landmark| -%>
+		- <%= landmark %>
+	<% end -%>
+	<% end -%>
+
+<% if districts && districts.any? -%>
+- ### Districts & Areas
+<% districts.each do |district| -%>
+	- **<%= district[:name] %>**: <%= district[:description] %>
+<% end -%>
+<% end -%>
+
+- ### Population
+	- **Size**: <%= population_size || "Unknown" %>
+	- **Demographics**: <%= demographics || "Mixed races" %>
+	<% if notable_groups && notable_groups.any? -%>
+	- **Notable Groups**:
+	<% notable_groups.each do |group| -%>
+		- <%= link(group) %>
+	<% end -%>
+	<% end -%>
+
+- ### Government & Leadership
+	- **Government Type**: <%= government_type || "Unknown" %>
+	- **Current Leader**: <%= link(leader) if leader %>
+	<% if laws && laws.any? -%>
+	- **Notable Laws**:
+	<% laws.each do |law| -%>
+		- <%= law %>
+	<% end -%>
+	<% end -%>
+
+<% if economy -%>
+- ### Economy
+	- **Primary Industries**: <%= economy[:industries] || "Trade and crafts" %>
+	- **Exports**: <%= economy[:exports] || "Various goods" %>
+	- **Imports**: <%= economy[:imports] || "Various goods" %>
+<% end -%>
+
+<% if notable_locations && notable_locations.any? -%>
+- ### Notable Locations
+<% notable_locations.each do |loc| -%>
+	- **<%= loc[:name] %>**: <%= loc[:description] %>
+<% end -%>
+<% end -%>
+
+<% if npcs && npcs.any? -%>
+- ### Notable NPCs
+<% npcs.each do |npc| -%>
+	- <%= link(npc[:name]) %>: <%= npc[:role] %>
+<% end -%>
+<% end -%>
+
+<% if plot_hooks && plot_hooks.any? -%>
+- ### Plot Hooks
+<% plot_hooks.each do |hook| -%>
+	- <%= hook %>
+<% end -%>
+<% end -%>
+
+<% if history && history.any? -%>
+- ### History
+<% history.each do |event| -%>
+	- **<%= event[:date] %>**: <%= event[:description] %>
+<% end -%>
+<% end -%>
+
+<% if connections && connections.any? -%>
+- ### Connections
+	- **Trade Routes**: 
+	<% connections.each do |connection| -%>
+		- <%= link(connection) %>
+	<% end -%>
+<% end -%>
