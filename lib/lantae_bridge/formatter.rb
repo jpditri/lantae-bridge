@@ -3,28 +3,36 @@
 module LantaeBridge
   class Formatter
     HEADER_REGEX = /^(#+)\s+(.+)$/
-    PROPERTY_REGEX = /^(\w+):\s*(.+)$/
+    PROPERTY_REGEX = /^([A-Za-z][A-Za-z0-9\s]*?):\s*(.*)$/
     YAML_FRONT_MATTER_REGEX = /\A---\s*\n(.*?)\n---\s*\n/m
     
-    # Patterns that indicate list sections that should be indented under their parent
+    # Properties that should remain as Logseq properties, not become headers
+    PROPERTY_KEYS = [
+      'type', 'description', 'parent_location_id', 'parent location id', 'coordinates', 'population', 
+      'government', 'notable_features', 'history', 'current_events', 'current events', 'secrets', 
+      'status', 'race', 'npc_class', 'alignment', 'cr', 'str', 'dex', 'con', 
+      'int', 'wis', 'cha', 'hp', 'ac', 'speed', 'abilities', 'attacks', 
+      'combat_tactics', 'campaign', 'location', 'level', 'background', 'tags',
+      'notable_npcs', 'notable npcs', 'region', 'summary', 'name', 'id', 'campaign_id', 
+      'campaign_slug'
+    ].map(&:downcase)
+    
+    # Patterns that indicate list sections that should become subheaders
+    # These are sections that typically have list items underneath them
     LIST_SECTION_PATTERNS = [
-      /^-?\s*Features?:/i,
-      /^-?\s*Notable NPCs?:/i,
-      /^-?\s*Hooks?:/i,
-      /^-?\s*Adventure Hooks?:/i,
-      /^-?\s*Dangers?:/i,
-      /^-?\s*Equipment:/i,
-      /^-?\s*Abilities:/i,
-      /^-?\s*Skills:/i,
-      /^-?\s*Stats?:/i,
-      /^-?\s*Proficiencies:/i,
-      /^-?\s*Languages:/i,
-      /^-?\s*Special Abilities:/i,
-      /^-?\s*Conversation Starters:/i,
-      /^-?\s*Plot Hooks?:/i,
-      /^-?\s*Character Arc Opportunities:/i,
-      /^-?\s*Risks?:/i,
-      /^-?\s*Vulnerabilities:/i
+      /^-?\s*Features?:\s*$/i,
+      /^-?\s*Hooks?:\s*$/i,
+      /^-?\s*Adventure Hooks?:\s*$/i,
+      /^-?\s*Dangers?:\s*$/i,
+      /^-?\s*Equipment:\s*$/i,
+      /^-?\s*Abilities:\s*$/i,
+      /^-?\s*Skills:\s*$/i,
+      /^-?\s*Special Abilities:\s*$/i,
+      /^-?\s*Conversation Starters:\s*$/i,
+      /^-?\s*Plot Hooks?:\s*$/i,
+      /^-?\s*Character Arc Opportunities:\s*$/i,
+      /^-?\s*Risks?:\s*$/i,
+      /^-?\s*Vulnerabilities:\s*$/i
     ]
 
     def format_for_logseq(content)
@@ -49,16 +57,16 @@ module LantaeBridge
         formatted_line = process_line_with_hierarchy(line, indent_stack, in_list_section)
         formatted_lines << formatted_line unless formatted_line.nil?
         
-        # Update list section tracking - more sophisticated approach
+        # Update list section tracking - list sections are now headers
         if !line.strip.empty?
           if is_list_section?(line)
+            # List sections are now converted to headers, so we're entering a list context
             in_list_section = true
-          elsif line.match(HEADER_REGEX) || is_yaml_property_line?(line)
-            # Headers or properties reset the list section context
+          elsif line.match(HEADER_REGEX) && !is_list_section?(line)
+            # Regular headers reset the list section context
             in_list_section = false
-          elsif line.strip.start_with?('- ') && !in_list_section
-            # If we see a bullet point but we're not in a list section,
-            # check if this might be continuing from a previous list section
+          elsif is_yaml_property_line?(line)
+            # Properties reset the list section context
             in_list_section = false
           end
         end
@@ -120,37 +128,49 @@ module LantaeBridge
 
       # Check if this is a special list section (Features, Hooks, etc.)
       if is_list_section?(line)
-        # List sections should be indented under their parent section
-        current_indent = indent_stack.length > 0 ? indent_stack.length : 0
-        indent = "\t" * current_indent
+        # Convert list sections to proper subheaders
+        # For simple entity files, list sections should be ## level headers
+        header_level = 2
         
-        # If it already starts with '- ', keep it, otherwise add it
-        if line.strip.start_with?('- ')
-          content = line.strip[2..-1]
-        else
-          content = line.strip
+        # Clean up the section name - remove bullets and colons
+        section_name = line.strip
+        section_name = section_name.sub(/^-\s*/, '')  # Remove leading bullet
+        section_name = section_name.sub(/:+\s*$/, '') # Remove trailing colons
+        
+        # Update indent stack for this new header level
+        while indent_stack.length >= header_level
+          indent_stack.pop
         end
+        indent_stack[header_level - 1] = header_level
         
-        return "#{indent}- #{content}"
+        # Create proper subheader with Logseq formatting
+        indent = "\t" * (header_level - 1)
+        return "#{indent}- #{'#' * header_level} #{section_name}"
       end
 
-      # Handle properties (key:: value format) 
-      if line.match(PROPERTY_REGEX)
-        # Properties within content sections get indented
-        current_indent = indent_stack.length > 0 ? indent_stack.length : 0
-        indent = "\t" * current_indent
-        return "#{indent}- #{line.strip}"
+      # Handle properties (key: value format)
+      if (match = line.match(PROPERTY_REGEX))
+        property_key = match[1].strip.downcase
+        property_value = match[2].strip
+        
+        # Check if this is a known property that should use :: format
+        if PROPERTY_KEYS.include?(property_key)
+          # Convert to Logseq property format
+          current_indent = indent_stack.length > 0 ? indent_stack.length : 0
+          indent = "\t" * current_indent
+          return "#{indent}- #{match[1].strip}:: #{property_value}"
+        else
+          # Regular content line
+          current_indent = indent_stack.length > 0 ? indent_stack.length : 0
+          indent = "\t" * current_indent
+          return "#{indent}- #{line.strip}"
+        end
       end
 
       # Handle existing bullet points
       if line.strip.start_with?('- ')
         # Get current indentation level from context
         base_indent = indent_stack.length > 0 ? indent_stack.length : 0
-        
-        # If we're in a list section context, add extra indentation for list items
-        if in_list_section
-          base_indent += 1
-        end
         
         # Check if this line already has indentation (nested)
         existing_indent_match = line.match(/^(\t*)/)
@@ -161,15 +181,22 @@ module LantaeBridge
         
         indent = "\t" * total_indent
         content = line.strip[2..-1] # Remove the '- ' prefix
+        
+        # Check if the content is a property that should use :: format
+        # But skip if it's already in :: format
+        if (match = content.match(PROPERTY_REGEX)) && !content.include?('::')
+          property_key = match[1].strip.downcase
+          property_value = match[2].strip
+          
+          if PROPERTY_KEYS.include?(property_key)
+            return "#{indent}- #{match[1].strip}:: #{property_value}"
+          end
+        end
+        
         return "#{indent}- #{content}"
       elsif line.strip.start_with?('* ')
         # Convert asterisk bullets to dash with proper indentation
         base_indent = indent_stack.length > 0 ? indent_stack.length : 0
-        
-        # If we're in a list section context, add extra indentation for list items
-        if in_list_section
-          base_indent += 1
-        end
         
         existing_indent_match = line.match(/^(\t*)/)
         existing_tabs = existing_indent_match ? existing_indent_match[1].length : 0
@@ -184,11 +211,6 @@ module LantaeBridge
       if line.strip.length > 0
         base_indent = indent_stack.length > 0 ? indent_stack.length : 0
         
-        # If we're in a list section context, add extra indentation for items
-        if in_list_section
-          base_indent += 1
-        end
-        
         indent = "\t" * base_indent
         return "#{indent}- #{line.strip}"
       end
@@ -201,7 +223,12 @@ module LantaeBridge
     end
 
     def is_yaml_property_line?(line)
-      line.match(PROPERTY_REGEX) && !line.strip.start_with?('- ')
+      if (match = line.match(PROPERTY_REGEX))
+        property_key = match[1].strip.downcase
+        PROPERTY_KEYS.include?(property_key) && !line.strip.start_with?('- ')
+      else
+        false
+      end
     end
   end
 end
